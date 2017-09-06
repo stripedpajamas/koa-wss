@@ -1,27 +1,27 @@
 {
-  "name": "koa-websocket",
-  "version": "4.0.0",
-  "description": "Light wrapper around Koa providing a websocket middleware handler that is koa-route compatible.",
-  "main": "index.js",
+  "name": "koa-wss",
+  "version": "1.0.0",
+  "description": "Koa compatible wrapper to support Secure WebSockets",
+  "main": "lib/index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha $NODE_FLAGS test/test.js"
+    "prepare": "babel --no-babelrc --presets=es2015 src --out-dir lib",
+    "test": "mocha test"
   },
   "keywords": [
     "koa",
     "websockets",
     "ws",
+    "wss",
+    "secure",
     "sockets",
     "routes"
   ],
   "author": {
-    "name": "Jonathan Cremin",
-    "email": "jonathan@crem.in",
-    "url": "https://crem.in",
-    "twitter": "https://twitter.com/kudoz"
+    "name": "Peter Squicciarini"
   },
-  "repository": "git://github.com/kudos/koa-websocket",
-  "bugs": "https://github.com/kudos/koa-websocket/issues",
-  "homepage": "https://github.com/kudos/koa-websocket",
+  "repository": "git://github.com/stripedpajamas/koa-wss",
+  "bugs": "https://github.com/stripedpajamas/koa-wss/issues",
+  "homepage": "https://github.com/stripedpajamas/koa-wss",
   "license": "MIT",
   "dependencies": {
     "co": "^4.4.0",
@@ -30,7 +30,12 @@
     "ws": "^2.3.1"
   },
   "devDependencies": {
-    "koa": "^2.2.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "eslint": "^4.6.1",
+    "eslint-config-airbnb-base": "^12.0.0",
+    "eslint-plugin-import": "^2.7.0",
+    "koa": "^2.3.0",
     "koa-route": "^3.2.0",
     "mocha": "^3.3.0"
   }

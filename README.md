@@ -1,52 +1,64 @@
-# koa-websocket
+# koa-wss
 
-[![Circle CI](https://circleci.com/gh/kudos/koa-websocket.svg?style=svg)](https://circleci.com/gh/kudos/koa-websocket)
+This is a fork/copy of the _excellent_ package [koa-websocket](https://github.com/kudos/koa-websocket/) by Jonathan Cremin.
+I needed a koa-compatible secure WebSocket package and I couldn't figure out a way to keep the flexibility and simplicity of his code, so I copied and tweaked it.
 
-> Koa v2 is now the default. For Koa v1 support install with koa-websocket@2 and see the `legacy` branch.
+Koa's `.listen` method just calls `http.createServer(options).listen(...)`, so this calls `https.createServer(options).listen(...)` instead and provides a parameter to pass in the HTTPS options (like the certificate and stuff).
+
+See Koa's docs about this [here](http://koajs.com/#application).
 
 ## Installation
 
-`npm install koa-websocket`
+`npm install koa-wss --save`
 
 ## Usage
 
-```js
-const Koa = require('koa'),
-  route = require('koa-route'),
-  websockify = require('koa-websocket');
+```javascript
+const fs = require('fs');
+const path = require('path');
+const Koa = require('koa');
+const route = require('koa-route');
+const websockify = require('koa-wss');
 
-const app = websockify(new Koa());
+// using a local certificate
+const httpsOptions = {
+  key: fs.readFileSync(path.resolve(__dirname, './test/certs/server.key')),
+  cert: fs.readFileSync(path.resolve(__dirname, './test/certs/server.crt'))
+};
 
-// Regular middleware
+// the main event
+const app = websockify(new Koa(), {}, httpsOptions);
+
 // Note it's app.ws.use and not app.use
-app.ws.use(function(ctx, next) {
-  // return `next` to pass the context (ctx) on to the next ws middleware
-  return next(ctx);
-});
-
-// Using routes
-app.ws.use(route.all('/test/:id', function (ctx) {
-  // `ctx` is the regular koa context created from the `ws` onConnection `socket.upgradeReq` object.
-  // the websocket is added to the context on `ctx.websocket`.
+app.ws.use(route.all('/test', (ctx, next) => {
   ctx.websocket.send('Hello World');
-  ctx.websocket.on('message', function(message) {
+  ctx.websocket.on('message', (message) => {
     // do something with the message from client
-        console.log(message);
+    console.log(message);
   });
+  return next()
 }));
 
 app.listen(3000);
+
 ```
 
-With custom websocket options.
+With custom WebSocket options:
 
 ```js
-const Koa = require('koa'),
-  route = require('koa-route'),
-  websockify = require('koa-websocket');
+const Koa = require('koa');
+const route = require('koa-route');
+const websockify = require('koa-wss');
 
+// using a local certificate
+const httpsOptions = {
+  key: fs.readFileSync(path.resolve(__dirname, './test/certs/server.key')),
+  cert: fs.readFileSync(path.resolve(__dirname, './test/certs/server.crt'))
+};
 const wsOptions = {};
-const app = websockify(new Koa(), wsOptions);
+
+// the magic happens right here
+const app = websockify(new Koa(), wsOptions, httpsOptions);
 
 app.ws.use(route.all('/', function* (ctx) {
    // the websocket is added to the context as `this.websocket`.
@@ -58,3 +70,6 @@ app.ws.use(route.all('/', function* (ctx) {
 
 app.listen(3000);
 ```
+
+## License
+MIT

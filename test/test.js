@@ -1,107 +1,123 @@
-'use strict';
+/* global describe, it */
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const WebSocket = require('ws');
+const Koa = require('koa');
+const route = require('koa-route');
 
-var assert = require('assert'),
-  WebSocket = require('ws'),
-  Koa = require('koa'),
-  route = require('koa-route');
+const websockify = require('../');
 
-var koaws = require('..');
+const httpsOptions = {
+  key: fs.readFileSync(path.resolve(__dirname, 'certs/server.key')),
+  cert: fs.readFileSync(path.resolve(__dirname, 'certs/server.crt')),
+};
 
-describe('should route ws messages seperately', function() {
-  const app = koaws(new Koa(), {
-    handleProtocols: function (protocols) {
-      if (protocols.indexOf("bad_protocol") !== -1)
+describe('should route ws messages seperately', () => {
+  const app = websockify(new Koa(), {
+    handleProtocols: (protocols) => {
+      if (protocols.indexOf('bad_protocol') !== -1) {
         return false;
+      }
       return protocols.pop();
-    }
-  });
+    },
+  }, httpsOptions);
 
-  app.ws.use(function(ctx, next){
-    ctx.websocket.on('message', function(message) {
-      if (message == '123') {
+  app.ws.use((ctx, next) => {
+    ctx.websocket.on('message', (message) => {
+      if (message === '123') {
         ctx.websocket.send(message);
       }
     });
     return next();
   });
 
-  app.ws.use(route.all('/abc', function(ctx){
-    ctx.websocket.on('message', function(message) {
+  app.ws.use(route.all('/abc', (ctx) => {
+    ctx.websocket.on('message', (message) => {
       ctx.websocket.send(message);
     });
   }));
 
-  app.ws.use(route.all('/abc', function(ctx){
-    ctx.websocket.on('message', function(message) {
+  app.ws.use(route.all('/abc', (ctx) => {
+    ctx.websocket.on('message', (message) => {
       ctx.websocket.send(message);
     });
   }));
 
-  app.ws.use(route.all('/def', function(ctx){
-    ctx.websocket.on('message', function(message) {
+  app.ws.use(route.all('/def', (ctx) => {
+    ctx.websocket.on('message', (message) => {
       ctx.websocket.send(message);
     });
   }));
 
-  var server = app.listen();
+  const server = app.listen();
 
-  it('sends 123 message to any route', function(done){
-    var ws = new WebSocket('ws://localhost:' + server.address().port + '/not-a-route');
-    ws.on('open', function() {
+  it('sends 123 message to any route', (done) => {
+    const ws = new WebSocket(`wss://localhost:${server.address().port}/not-a-route`, {
+      rejectUnauthorized: false,
+    });
+    ws.on('open', () => {
       ws.send('123');
     });
-    ws.on('message', function(message) {
+    ws.on('message', (message) => {
       assert(message === '123');
       done();
     });
   });
 
-  it('sends abc message to abc route', function(done){
-    var ws = new WebSocket('ws://localhost:' + server.address().port + '/abc');
-    ws.on('open', function() {
+  it('sends abc message to abc route', (done) => {
+    const ws = new WebSocket(`wss://localhost:${server.address().port}/abc`, {
+      rejectUnauthorized: false,
+    });
+    ws.on('open', () => {
       ws.send('abc');
     });
-    ws.on('message', function(message) {
+    ws.on('message', (message) => {
       assert(message === 'abc');
       done();
     });
   });
 
-  it('sends def message to def route', function(done){
-    var ws = new WebSocket('ws://localhost:' + server.address().port + '/def');
-    ws.on('open', function() {
+  it('sends def message to def route', (done) => {
+    const ws = new WebSocket(`wss://localhost:${server.address().port}/def`, {
+      rejectUnauthorized: false,
+    });
+    ws.on('open', () => {
       ws.send('def');
     });
-    ws.on('message', function(message) {
+    ws.on('message', (message) => {
       assert(message === 'def');
       done();
     });
   });
 
-  it('handles urls with query parameters', function(done){
-    var ws = new WebSocket('ws://localhost:' + server.address().port + '/abc?foo=bar');
-    ws.on('open', function() {
+  it('handles urls with query parameters', (done) => {
+    const ws = new WebSocket(`wss://localhost:${server.address().port}/abc?foo=bar`, {
+      rejectUnauthorized: false,
+    });
+    ws.on('open', () => {
       ws.send('abc');
     });
-    ws.on('message', function(message) {
+    ws.on('message', (message) => {
       assert(message === 'abc');
       done();
     });
   });
 
-  it('reject bad protocol use wsOptions', function(done){
-    var ws = new WebSocket('ws://localhost:' + server.address().port + '/abc', ['bad_protocol']);
-    ws.on('open', function() {
+  it('reject bad protocol use wsOptions', (done) => {
+    const ws = new WebSocket(`wss://localhost:${server.address().port}/abc`, ['bad_protocol'], {
+      rejectUnauthorized: false,
+    });
+    ws.on('open', () => {
       ws.send('abc');
     });
-    ws.on('message', function(message) {
+    ws.on('message', () => {
       assert(false);
       done();
     });
-    ws.on('unexpected-response', function() {
+    ws.on('unexpected-response', () => {
       assert(true);
       done();
     });
   });
 });
-;
