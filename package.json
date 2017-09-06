@@ -1,6 +1,6 @@
 {
   "name": "koa-wss",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Koa compatible wrapper to support Secure WebSockets",
   "main": "lib/index.js",
   "scripts": {
