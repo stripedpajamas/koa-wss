@@ -46,7 +46,7 @@ module.exports = (koaApp, wsOptions, httpsOptions = {}) => {
   app.listen = (...args) => {
     debug('Attaching server...');
     const httpsServer = https.createServer(httpsOptions, app.callback());
-    app.server = httpsServer.listen.apply(httpsServer, ...args);
+    app.server = httpsServer.listen(...args);
     const options = Object.assign({}, wsOptions, { server: app.server });
     app.ws.listen(options);
     return app.server;
