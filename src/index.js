@@ -38,15 +38,20 @@ KoaWebSocketServer.prototype.use = function (fn) {
   return this;
 };
 
-module.exports = (koaApp, wsOptions, httpsOptions = {}) => {
+module.exports = (koaApp, wsOptions, httpsOptions) => {
   // the Koa listen function is syntactic sugar for
   // http.createServer(app.callback()).listen(...)
-  // here we overwrite for HTTPS
+  // here we overwrite for HTTPS if httpsOptions are supplied
   const app = koaApp;
+  const oldListen = app.listen;
   app.listen = (...args) => {
     debug('Attaching server...');
-    const httpsServer = https.createServer(httpsOptions, app.callback());
-    app.server = httpsServer.listen(...args);
+    if (typeof httpsOptions === 'object') {
+      const httpsServer = https.createServer(httpsOptions, app.callback());
+      app.server = httpsServer.listen(...args);
+    } else {
+      app.server = oldListen.apply(app, args);
+    }
     const options = Object.assign({}, wsOptions, { server: app.server });
     app.ws.listen(options);
     return app.server;

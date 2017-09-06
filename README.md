@@ -2,10 +2,11 @@
 
 :blue_heart: Support `wss://` in your Koa app :blue_heart:
 
-This is a fork/copy of the _excellent_ package [koa-websocket](https://github.com/kudos/koa-websocket/) by Jonathan Cremin.
-I needed a koa-compatible secure WebSocket package and I couldn't figure out a way to keep the flexibility and simplicity of his code, so I copied and tweaked it.
+This is a fork/copy of the excellent package [koa-websocket](https://github.com/kudos/koa-websocket/) by Jonathan Cremin, with secure Web Socket functionality added.
 
 Koa's `listen` method just calls `http.createServer(options).listen(...)`, so this calls `https.createServer(options).listen(...)` instead and provides a parameter to pass in the HTTPS options (like the certificate and stuff).
+
+If you don't supply an `httpsOptions` argument, koa-wss will do what koa-websocket does and just use Koa's built-in `listen` method.
 
 See Koa's docs about this [here](http://koajs.com/#application).
 
@@ -79,7 +80,8 @@ The WebSocket options object just get passed right through to the `new WebSocket
 koa-wss passes in `{ server: httpsServer }` automatically because that's the whole point.
 
 The HTTPS options object gets passed right into `https.createServer(options)`. If you don't specify
-these options with your certificate info you're probably gonna be majorly hosed.
+these options with your certificate info, it will just set up an HTTP Koa server (the default).
+
 
 ## License
 MIT
