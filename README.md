@@ -1,9 +1,11 @@
 # koa-wss
 
+:blue_heart: Support `wss://` in your Koa app :blue_heart:
+
 This is a fork/copy of the _excellent_ package [koa-websocket](https://github.com/kudos/koa-websocket/) by Jonathan Cremin.
 I needed a koa-compatible secure WebSocket package and I couldn't figure out a way to keep the flexibility and simplicity of his code, so I copied and tweaked it.
 
-Koa's `.listen` method just calls `http.createServer(options).listen(...)`, so this calls `https.createServer(options).listen(...)` instead and provides a parameter to pass in the HTTPS options (like the certificate and stuff).
+Koa's `listen` method just calls `http.createServer(options).listen(...)`, so this calls `https.createServer(options).listen(...)` instead and provides a parameter to pass in the HTTPS options (like the certificate and stuff).
 
 See Koa's docs about this [here](http://koajs.com/#application).
 
@@ -13,6 +15,33 @@ See Koa's docs about this [here](http://koajs.com/#application).
 
 ## Usage
 
+Example with Let's Encrypt ([the Greenlock package](https://git.daplie.com/Daplie/greenlock-koa)):
+
+```js
+const Koa = require('koa');
+const greenlock = require('greenlock-express');
+const websockify = require('koa-wss');
+
+const le = greenlock.create({
+  // all your sweet Let's Encrypt options here
+});
+
+// the magic happens right here
+const app = websockify(new Koa(), wsOptions, le.httpsOptions);
+
+// async/await is of course supported
+app.ws.use(async (ctx, next) => {
+   // the websocket is added to the context as `ctx.websocket`.
+  await bananas();
+  ctx.websocket.on('message', function(message) {
+    // do something
+  });
+});
+
+app.listen(3000);
+```
+
+Another example:
 ```javascript
 const fs = require('fs');
 const path = require('path');
@@ -20,7 +49,7 @@ const Koa = require('koa');
 const route = require('koa-route');
 const websockify = require('koa-wss');
 
-// using a local certificate
+// using a local certificate, but whatever you normally put in HTTPS options works here
 const httpsOptions = {
   key: fs.readFileSync(path.resolve(__dirname, './test/certs/server.key')),
   cert: fs.readFileSync(path.resolve(__dirname, './test/certs/server.crt'))
@@ -30,6 +59,7 @@ const httpsOptions = {
 const app = websockify(new Koa(), {}, httpsOptions);
 
 // Note it's app.ws.use and not app.use
+// This example uses koa-route
 app.ws.use(route.all('/test', (ctx, next) => {
   ctx.websocket.send('Hello World');
   ctx.websocket.on('message', (message) => {
@@ -43,33 +73,13 @@ app.listen(3000);
 
 ```
 
-With custom WebSocket options:
+## API
+#### websockify(KoaApp, WebSocketOptions, httpsOptions)
+The WebSocket options object just get passed right through to the `new WebSocketServer` call.
+koa-wss passes in `{ server: httpsServer }` automatically because that's the whole point.
 
-```js
-const Koa = require('koa');
-const route = require('koa-route');
-const websockify = require('koa-wss');
-
-// using a local certificate
-const httpsOptions = {
-  key: fs.readFileSync(path.resolve(__dirname, './test/certs/server.key')),
-  cert: fs.readFileSync(path.resolve(__dirname, './test/certs/server.crt'))
-};
-const wsOptions = {};
-
-// the magic happens right here
-const app = websockify(new Koa(), wsOptions, httpsOptions);
-
-app.ws.use(route.all('/', function* (ctx) {
-   // the websocket is added to the context as `this.websocket`.
-  ctx.websocket.on('message', function(message) {
-    // print message from the client
-    console.log(message);
-  });
-}));
-
-app.listen(3000);
-```
+The HTTPS options object gets passed right into `https.createServer(options)`. If you don't specify
+these options with your certificate info you're probably gonna be majorly hosed.
 
 ## License
 MIT
